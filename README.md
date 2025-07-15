@@ -1,2 +1,2 @@
 # personal_assistant
-Personal assistant
+Start personal assistant project.
