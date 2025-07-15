@@ -1,10 +1,67 @@
-from src.models import AddressBook, CustomValueError, Record
+from src.models import AddressBook, CustomValueError, Note, NoteRecord, Record, Title
 from src.decorators import input_error
+from colorama import Fore, Style, init
+import shlex
+
+init(autoreset=True)
+
+
+def commands_overview():
+    # Define the column width for command names
+    cmd_width = 20
+    out = f"\n{Fore.CYAN + Style.BRIGHT}COMMAND OVERVIEW{Style.RESET_ALL}\n\n"
+
+    def line(cmd, desc, usage=None):
+        result = f"{Fore.YELLOW}{cmd.ljust(cmd_width)}{Style.RESET_ALL} {Fore.GREEN}{desc}{Style.RESET_ALL}\n"
+        if usage:
+            result += f"{' ' * cmd_width} {Fore.CYAN}Usage: {usage}{Style.RESET_ALL}\n"
+        return result
+
+    out += line("note-add", "Adds a new note", 'note-add --title "title" --text "text"') + "\n"
+    out += line("notes-all", "Shows all saved notes")  + "\n"
+    out += line("add", "Adds a contact with phone number", 'add Mykola 0660320528')  + "\n"
+    out += line("change", "Changes a contact's phone number", 'change John 0660320528 0660320529')  + "\n"
+    out += line("phone", "Shows phone(s) of a contact", 'phone John')  + "\n"
+    out += line("all", "Shows all contacts")  + "\n"
+    out += line("add-birthday", "Adds birthday to a contact", 'add-birthday Andrii 25.07.2001')  + "\n"
+    out += line("show-birthday", "Shows birthday of a contact", 'show-birthday John')  + "\n"
+    out += line("birthdays", "Shows upcoming birthdays in next defined days")  + "\n"
+    out += line("exit | close", "Exits the bot")  + "\n"
+    out += line("help | ?", "Shows this help table")  + "\n"
+
+    return out
+
 
 def parse_input(user_input: str):
-    cmd, *args = user_input.split()
-    cmd = cmd.strip().lower()
-    return cmd, *args
+    try:
+        parts = shlex.split(user_input)
+    except ValueError as e:
+        raise ValueError("Invalid input format. Check your quotes.") from e
+
+    if not parts:
+        return "", []
+
+    cmd = parts[0].strip().lower()
+    args = parts[1:]
+    return cmd, args
+
+
+def parse_named_args(args: list[str]) -> dict:
+    result = {}
+    i = 0
+    while i < len(args):
+        if args[i].startswith("--"):
+            key = args[i].lstrip("-")
+            if i + 1 < len(args) and not args[i + 1].startswith("--"):
+                result[key] = args[i + 1]
+                i += 2
+            else:
+                result[key] = ""
+                i += 1
+        else:
+            i += 1
+    return result
+
 
 @input_error
 def add_contact(args, book: AddressBook):
@@ -71,4 +128,31 @@ def birthdays(book: AddressBook):
     for day, names in sorted(upcoming_birthdays.items()):
         result.append(f"{day}: {', '.join(names)}")
     return "\n".join(result)
+
+@input_error
+def add_note(args, note_instance: Note):
+    title, note_text, *_ = args
+    note_record = NoteRecord(title)
+
+    try:
+        title = Title(title).value
+        note_record.validate_note_text(note_text)
+        record = note_instance.find(title)
+    except ValueError as e:
+        return f"Validation error: {e}"
+    
+    if note_instance.find(title):
+        return f"Note with title {title} already exists."
+
+    record = NoteRecord(title, note_text)
+    note_instance.add_record(record)
+    
+    return f"Note with title {title} added."
+    
+    
+@input_error
+def show_all_notes(note: Note):
+    if not note.data:
+        return "Can not find any note."
+    return "\n\n".join(str(record) for record in note.data.values())
            

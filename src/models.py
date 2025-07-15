@@ -21,6 +21,19 @@ class Field:
 class Name(Field):
 		pass
 
+# Note title class
+class Title(Field):
+    def __init__(self, value):
+        value = self._validate(value)
+        super().__init__(value)
+
+    def _validate(self, value):
+        if not value.strip():
+            raise ValueError("Title cannot be empty.")
+        if len(value) > 20:
+            raise ValueError("Title is too long (max 20 characters).")
+        return value
+
 # Contact birthday class
 class Birthday(Field):
     def __init__(self, value):
@@ -86,6 +99,20 @@ class Record:
     def __str__(self):
         phones_str = "; ".join(p.value for p in self.phones)
         return f"Contact name: {self.name.value}, {"phones" if len(self.phones) > 1 else "phone" }: {phones_str}"
+    
+class NoteRecord:
+    def __init__(self, title, note_text=""):
+        self.title = Title(title)
+        self.note_text = note_text
+
+    def validate_note_text(self, note_text):
+        if not note_text.strip():
+            return "Note text can not be empty"
+        if len(note_text) > 100:
+            return "Note text is too long (max. is 100 characters)"
+
+    def __str__(self):
+        return f"Note title: {self.title.value}, note: {self.note_text}"
 
 
 # AddressBook (Map for Records)
@@ -129,3 +156,13 @@ class AddressBook(UserDict):
                     upcoming_birthdays[weekday].append(contact.name.value)
 
         return dict(upcoming_birthdays)
+    
+# Notes entity class    
+class Note(UserDict):
+    # Add record by note title
+    def add_record(self, record):
+        self.data[record.title.value] = record
+
+    # Find Record by title
+    def find(self, title):
+        return self.data.get(title)
