@@ -3,7 +3,7 @@ from src.store import load_address_book, load_notes_data, save_data, save_notes_
 from src.processing import (
     add_birthday, birthdays, change_contact, parse_input, parse_named_args,
     add_contact, show_all, show_birthday, show_phone,
-    add_note, show_all_notes,
+    add_note, delete_note, show_all_notes, update_note,
     commands_overview
 )
 
@@ -48,6 +48,14 @@ def main():
                 print(add_note([title, text], notes))
             case "notes-all":
                 print(show_all_notes(notes))
+            case "notes":
+                parts = parse_named_args(args)
+                search_str = parts.get('search')
+                print(show_all_notes(notes, search_str))
+            case 'note-update':
+                print(update_note(args, notes))
+            case 'note-delete':
+                print(delete_note(args, notes))
             case _:
                 print("Invalid command.")
 
