@@ -1,7 +1,7 @@
 from src.models import AddressBook
 from src.store import load_address_book, load_notes_data, save_data, save_notes_data
 from src.processing import (
-    add_birthday, birthdays, change_contact, parse_input, parse_named_args,
+    add_birthday, add_contact_complete, birthdays, change_contact, parse_input, parse_named_args,
     add_contact, show_all, show_birthday, show_phone,
     add_note, show_all_notes,
     commands_overview
@@ -27,8 +27,10 @@ def main():
                 print("How can I help you?")
             case "help":
                 print(commands_overview())
+            case "add-contact":
+                print(add_contact_complete(book))
             case "add":
-                print(add_contact(args, book))    
+                print(add_contact(args, book))
             case "change":
                 print(change_contact(args, book))
             case "phone":

@@ -77,6 +77,48 @@ def add_contact(args, book: AddressBook):
     return message
 
 @input_error
+def add_contact_complete(book: AddressBook):
+    name_msg = "Please enter name (required): "
+    name_input = input(name_msg.rjust(len(name_msg) + 4)).strip()
+
+    if not name_input:
+        raise CustomValueError(f"To create new contact 'name' is required.")
+    
+    record = book.find(name_input)
+    if record:
+        return f'Contact {name_input} already exists.'
+    
+    record = Record(name_input)
+    book.add_record(record)
+    
+    phone_msg = "Please enter phone (optional), or press 'Enter' to skip: "
+    phone_input = input(phone_msg.rjust(len(phone_msg) + 4)).strip()
+
+    if phone_input:
+        record.add_phone(phone_input)
+
+    email_msg = "Please enter email (optional), or press 'Enter' to skip: "
+    email_input = input(email_msg.rjust(len(email_msg) + 4)).strip()
+
+    if email_input:
+        record.add_email(email_input)
+
+    birthday_msg = "Please enter birthday (optional), or press 'Enter' to skip: "
+    birthday_input = input(birthday_msg.rjust(len(birthday_msg) + 4)).strip()
+
+    if birthday_input:
+        record.add_birthday(birthday_input)
+
+    address_msg = "Please enter address (optional), or press 'Enter' to skip: "
+    address_input = input(address_msg.rjust(len(address_msg) + 4)).strip()
+
+    if address_input:
+        record.add_address(address_input)
+        
+    return "Contact added."
+    
+
+@input_error
 def change_contact(args, book: AddressBook):
     name, old_phone, new_phone, *_ = args
     record = book.find(name)

@@ -21,6 +21,9 @@ class Field:
 class Name(Field):
 		pass
 
+class Address(Field):
+	pass
+
 # Note title class
 class Title(Field):
     def __init__(self, value):
@@ -58,7 +61,18 @@ class Phone(Field):
     def _validate(self, value):
         if not re.fullmatch(r"\d{10}", value):
             raise PhoneValidationError          # Exception to handle in following implementation
+        
+# Email class
+class Email(Field):
+    email_regexp = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
 
+    def __init__(self, value):
+        self._validate(value)
+        super().__init__(value)
+
+    def _validate(self, value):
+        if not re.match(Email.email_regexp, value):
+            raise CustomValueError(f"Invalid email address: {value}")
 
 # One contact record: name, phone nr list.
 class Record:
@@ -66,6 +80,8 @@ class Record:
         self.name = Name(name)
         self.phones = []
         self.birthday = None
+        self.email = None
+        self.address = None
 
     def add_birthday(self, date_str):
         self.birthday = Birthday(date_str)
@@ -76,6 +92,12 @@ class Record:
             raise CustomValueError(f"Phone number {phone} already exists for the contact.")
         phone_to_add = Phone(phone)   # Validate + add
         self.phones.append(phone_to_add)
+
+    def add_email(self, email):
+        self.email = Email(email)
+    
+    def add_address(self, address):
+        self.address = Address(address)
 
     # Remove phone by value
     def remove_phone(self, phone):
