@@ -4,7 +4,7 @@ from src.processing import (
     add_birthday, birthdays, change_contact, parse_input, parse_named_args,
     add_contact, show_all, show_birthday, show_phone,
     add_note, show_all_notes,
-    commands_overview
+    commands_overview, delete_contact
 )
 
 def main():
@@ -28,7 +28,9 @@ def main():
             case "help":
                 print(commands_overview())
             case "add":
-                print(add_contact(args, book))    
+                print(add_contact(args, book))
+            case "delete":
+                print(delete_contact(args, book))    
             case "change":
                 print(change_contact(args, book))
             case "phone":

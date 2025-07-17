@@ -21,6 +21,7 @@ def commands_overview():
     out += line("notes-all", "Shows all saved notes")  + "\n"
     out += line("add", "Adds a contact with phone number", 'add Mykola 0660320528')  + "\n"
     out += line("change", "Changes a contact's phone number", 'change John 0660320528 0660320529')  + "\n"
+    out += line("delete", "Deletes a contact", 'delete John')  + "\n"
     out += line("phone", "Shows phone(s) of a contact", 'phone John')  + "\n"
     out += line("all", "Shows all contacts")  + "\n"
     out += line("add-birthday", "Adds birthday to a contact", 'add-birthday Andrii 25.07.2001')  + "\n"
@@ -155,4 +156,14 @@ def show_all_notes(note: Note):
     if not note.data:
         return "Can not find any note."
     return "\n\n".join(str(record) for record in note.data.values())
-           
+
+
+@input_error
+def delete_contact(args, book: AddressBook):
+    if not args:
+        raise IndexError
+    name = args[0]
+    if not book.find(name):
+        raise CustomValueError(f"Contact {name} not found.")
+    book.delete(name)
+    return f"Contact {name} deleted successfully."
