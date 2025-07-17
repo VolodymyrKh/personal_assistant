@@ -29,8 +29,8 @@ def main():
                 print(commands_overview())
             case "add":
                 print(add_contact(args, book))
-            case "delete":
-                print(delete_contact(args, book))    
+            case "delete": 
+                print(delete_contact(args, book))
             case "change":
                 print(change_contact(args, book))
             case "phone":
