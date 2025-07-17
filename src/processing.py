@@ -165,5 +165,14 @@ def delete_contact(args, book: AddressBook):
     name = args[0]
     if not book.find(name):
         raise CustomValueError(f"Contact {name} not found.")
-    book.delete(name)
-    return f"Contact {name} deleted successfully."
+    
+    # Запит підтвердження
+    while True:
+        confirmation = input(f"Are you sure you want to delete contact '{name}'? (y/n): ").strip().lower()
+        if confirmation == 'y':
+            book.delete(name)
+            return f"Contact {name} deleted successfully."
+        elif confirmation == 'n':
+            return f"Deletion cancelled. Contact {name} was not deleted."
+        else:
+            print("Please enter 'y' for yes or 'n' for no.")
