@@ -3,7 +3,7 @@ from src.store import load_address_book, load_notes_data, save_data, save_notes_
 from src.processing import (
     add_birthday, add_contact_complete, birthdays, change_contact, edit_contact_complete, parse_input, parse_named_args,
     add_contact, search_contact_by, show_all, show_birthday, show_phone,
-    add_note, show_all_notes, delete_note, update_note, commands_overview
+    add_note, show_all_notes, delete_note, update_note, commands_overview, delete_contact
 )
 
 def main():
@@ -45,7 +45,9 @@ def main():
             case "show-birthday":
                 print(show_birthday(args, book))
             case "birthdays":
-                print(birthdays(book))   
+                print(birthdays(book))
+            case "delete": 
+                print(delete_contact(args, book))
             case "note-add":
                 parts = parse_named_args(args)
                 title = parts.get('title')
