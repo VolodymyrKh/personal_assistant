@@ -98,7 +98,7 @@ class Record:
 
     def __str__(self):
         phones_str = "; ".join(p.value for p in self.phones)
-        return f"Contact name: {self.name.value}, {"phones" if len(self.phones) > 1 else "phone" }: {phones_str}"
+        return f"Contact name: {self.name.value}, {'phones' if len(self.phones) > 1 else 'phone'}: {phones_str}"
     
 class NoteRecord:
     def __init__(self, title, note_text=""):
