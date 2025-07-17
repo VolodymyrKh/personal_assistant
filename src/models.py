@@ -19,7 +19,7 @@ class Field:
     
 # Contact name class
 class Name(Field):
-		pass
+    pass
 
 # Note title class
 class Title(Field):
