@@ -1,5 +1,6 @@
 from collections import UserDict, defaultdict
 from datetime import datetime, timedelta
+import hashlib
 import re
 
 # Phone nr validation exception
@@ -28,10 +29,11 @@ class Title(Field):
         super().__init__(value)
 
     def _validate(self, value):
+        MAX_TITLE_LENGTH = 40
         if not value.strip():
             raise ValueError("Title cannot be empty.")
-        if len(value) > 20:
-            raise ValueError("Title is too long (max 20 characters).")
+        if len(value) > MAX_TITLE_LENGTH:
+            raise ValueError(f"Title is too long (max {MAX_TITLE_LENGTH} characters).")
         return value
 
 # Contact birthday class
@@ -104,15 +106,18 @@ class NoteRecord:
     def __init__(self, title, note_text=""):
         self.title = Title(title)
         self.note_text = note_text
+        self.id_hash = hashlib.sha1(title.encode()).hexdigest()[:6]
+
 
     def validate_note_text(self, note_text):
+        MAX_TEXT_LENGTH = 150
         if not note_text.strip():
             return "Note text can not be empty"
-        if len(note_text) > 100:
-            return "Note text is too long (max. is 100 characters)"
+        if len(note_text) > MAX_TEXT_LENGTH:
+            return f"Note text is too long (max. is {MAX_TEXT_LENGTH} characters)"
 
     def __str__(self):
-        return f"Note title: {self.title.value}, note: {self.note_text}"
+        return f"{self.id_hash} {self.title.value} {self.note_text}"
 
 
 # AddressBook (Map for Records)
