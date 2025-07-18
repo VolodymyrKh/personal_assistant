@@ -10,6 +10,12 @@ class PhoneValidationError(Exception):
 class CustomValueError(Exception):
     pass
 
+class EmailValidationError(Exception):
+    pass
+
+class BirthdayValidationError(Exception):
+    pass
+
 # Base class
 class Field:
     def __init__(self, value):
@@ -20,10 +26,26 @@ class Field:
     
 # Contact name class
 class Name(Field):
-		pass
+    def __init__(self, value):
+        value = self._validate(value)
+        super().__init__(value)
+    
+    def _validate(self, value):
+        if not value or not value.strip():
+            raise CustomValueError("Name cannot be empty.")
+        if len(value.strip()) < 2:
+            raise CustomValueError("Name must be at least 2 characters long.")
+        return value.strip()
 
 class Address(Field):
-	pass
+    def __init__(self, value):
+        value = self._validate(value)
+        super().__init__(value)
+    
+    def _validate(self, value):
+        if not value or not value.strip():
+            raise CustomValueError("Address cannot be empty.")
+        return value.strip()
 
 # Note title class
 class Title(Field):
@@ -47,9 +69,16 @@ class Birthday(Field):
 
     def _validate(self, value):
         try:
-            return datetime.strptime(value, "%d.%m.%Y").date()
+            date_obj = datetime.strptime(value, "%d.%m.%Y").date()
+            # Check if birthday is not in the future
+            if date_obj > datetime.today().date():
+                raise BirthdayValidationError("Birthday cannot be in the future.")
+            # Check if birthday is not too far in the past (reasonable age limit)
+            if date_obj < datetime(1900, 1, 1).date():
+                raise BirthdayValidationError("Birthday seems unrealistic (before 1900).")
+            return date_obj
         except ValueError:
-            raise CustomValueError("Invalid date format. Please use DD.MM.YYYY")
+            raise BirthdayValidationError("Invalid date format. Please use DD.MM.YYYY")
         
     def __str__(self):
         return self.value.strftime("%d.%m.%Y")    
@@ -61,8 +90,25 @@ class Phone(Field):
         super().__init__(value)
 
     def _validate(self, value):
-        if not re.fullmatch(r"\d{10}", value):
-            raise PhoneValidationError          # Exception to handle in following implementation
+        # Remove all non-digit characters
+        digits_only = re.sub(r'\D', '', value)
+        
+        # Check for common international formats
+        if value.startswith('+'):
+            # International format with country code
+            if len(digits_only) < 10 or len(digits_only) > 15:
+                raise PhoneValidationError("International phone number must be 10-15 digits (including country code).")
+        elif value.startswith('00'):
+            # International format starting with 00
+            if len(digits_only) < 10 or len(digits_only) > 15:
+                raise PhoneValidationError("International phone number must be 10-15 digits (including country code).")
+        else:
+            # Local format - must be exactly 10 digits
+            if len(digits_only) != 10:
+                raise PhoneValidationError("Local phone number must be exactly 10 digits.")
+        
+        # Store the cleaned version
+        self.value = digits_only
         
 # Email class
 class Email(Field):
@@ -73,8 +119,22 @@ class Email(Field):
         super().__init__(value)
 
     def _validate(self, value):
+        if not value or not value.strip():
+            raise EmailValidationError("Email cannot be empty.")
+        
+        value = value.strip().lower()
+        
         if not re.match(Email.email_regexp, value):
-            raise CustomValueError(f"Invalid email address: {value}")
+            raise EmailValidationError(f"Invalid email address format: {value}")
+        
+        # Additional checks
+        if len(value) > 254:  # RFC 5321 limit
+            raise EmailValidationError("Email address is too long.")
+        
+        if value.count('@') != 1:
+            raise EmailValidationError("Email must contain exactly one @ symbol.")
+        
+        return value
 
 # One contact record: name, phone nr list.
 class Record:
@@ -128,11 +188,24 @@ class Record:
         return f"Name: {self.name.value} | {'phones' if len(self.phones) > 1 else 'phone'}: {phones_str} | email: {self.email.value if self.email else ''} | birthday: {self.birthday.value if self.birthday else ''} | address: {self.address.value if self.address else ''}"
     
 class NoteRecord:
-    def __init__(self, title, note_text=""):
+    def __init__(self, title, note_text="", tags=None):
         self.title = Title(title)
         self.note_text = note_text
+        self.tags = set(tags) if tags else set()
         self.id_hash = hashlib.sha1(title.encode()).hexdigest()[:6]
 
+    def add_tag(self, tag):
+        """Add a tag to the note"""
+        if tag and tag.strip():
+            self.tags.add(tag.strip().lower())
+    
+    def remove_tag(self, tag):
+        """Remove a tag from the note"""
+        self.tags.discard(tag.strip().lower())
+    
+    def has_tag(self, tag):
+        """Check if note has a specific tag"""
+        return tag.strip().lower() in self.tags
 
     def validate_note_text(self, note_text):
         MAX_TEXT_LENGTH = 150
@@ -142,7 +215,8 @@ class NoteRecord:
             return f"Note text is too long (max. is {MAX_TEXT_LENGTH} characters)"
 
     def __str__(self):
-        return f"{self.id_hash} {self.title.value} {self.note_text}"
+        tags_str = f" [Tags: {', '.join(sorted(self.tags))}]" if self.tags else ""
+        return f"{self.id_hash} {self.title.value} {self.note_text}{tags_str}"
 
 
 # AddressBook (Map for Records)
@@ -216,3 +290,42 @@ class Note(UserDict):
     # Find Record by title
     def find(self, title):
         return self.data.get(title)
+
+    # Find Record by ID hash
+    def find_by_id(self, id_hash):
+        for record in self.data.values():
+            if record.id_hash == id_hash:
+                return record
+        return None
+
+    # Search notes by tag
+    def search_by_tag(self, tag):
+        tag = tag.strip().lower()
+        result = []
+        for record in self.data.values():
+            if record.has_tag(tag):
+                result.append(record)
+        return result
+
+    # Get all unique tags
+    def get_all_tags(self):
+        all_tags = set()
+        for record in self.data.values():
+            all_tags.update(record.tags)
+        return sorted(all_tags)
+
+    # Get notes sorted by tags
+    def get_notes_by_tags(self, tags=None):
+        if not tags:
+            return list(self.data.values())
+        
+        result = []
+        for record in self.data.values():
+            if any(tag.strip().lower() in record.tags for tag in tags):
+                result.append(record)
+        return result
+
+    # Delete Record by title
+    def delete(self, title):
+        if title in self.data:
+            del self.data[title]
