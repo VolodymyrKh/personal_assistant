@@ -305,8 +305,57 @@ def show_phone(args: list, book: AddressBook):
     
 def show_all(book: AddressBook):
     if not book.data:
-        return "Address book is empty."
-    return "\n".join(str(record) for record in book.data.values())
+        return f"{Fore.YELLOW}Address book is empty.{Style.RESET_ALL}"
+    
+    # Define column widths for better formatting
+    COLUMN_NAME_WIDTH = 25
+    COLUMN_PHONE_WIDTH = 30
+    COLUMN_EMAIL_WIDTH = 35
+    COLUMN_BIRTHDAY_WIDTH = 15
+    COLUMN_ADDRESS_WIDTH = 40
+    
+    # Create colorful header
+    header = (
+        f"{Fore.WHITE + Back.BLUE + Style.BRIGHT}"
+        f"{'Name':<{COLUMN_NAME_WIDTH}} | {'Phone(s)':<{COLUMN_PHONE_WIDTH}} | {'Email':<{COLUMN_EMAIL_WIDTH}} | {'Birthday':<{COLUMN_BIRTHDAY_WIDTH}} | {'Address':<{COLUMN_ADDRESS_WIDTH}}"
+        f"{Style.RESET_ALL}"
+    )
+    
+    rows = []
+    for idx, record in enumerate(book.data.values()):
+        # Alternate background colors for better readability
+        bg_color = Back.LIGHTGREEN_EX if idx % 2 == 0 else Back.LIGHTBLUE_EX
+        text_color = Fore.BLACK + Style.BRIGHT if idx % 2 == 0 else Fore.WHITE + Style.BRIGHT
+        
+        # Format phone numbers
+        phones_str = "; ".join(p.value for p in record.phones) if record.phones else "No phone"
+        
+        # Format email
+        email_str = record.email.value if record.email else "No email"
+        
+        # Format birthday
+        birthday_str = str(record.birthday.value) if record.birthday else "No birthday"
+        
+        # Format address
+        address_str = record.address.value if record.address else "No address"
+        
+        # Create the row with colorful formatting
+        row = (
+            f"{bg_color}{text_color}"
+            f"{record.name.value:<{COLUMN_NAME_WIDTH}} | "
+            f"{phones_str:<{COLUMN_PHONE_WIDTH}} | "
+            f"{email_str:<{COLUMN_EMAIL_WIDTH}} | "
+            f"{birthday_str:<{COLUMN_BIRTHDAY_WIDTH}} | "
+            f"{address_str:<{COLUMN_ADDRESS_WIDTH}}"
+            f"{Style.RESET_ALL}"
+        )
+        rows.append(row)
+    
+    # Add a summary line
+    total_contacts = len(book.data)
+    summary = f"\n{Fore.CYAN + Style.BRIGHT}Total contacts: {total_contacts}{Style.RESET_ALL}"
+    
+    return f"\n{header}\n" + "\n".join(rows) + summary
 
 @input_error
 def add_birthday(args, book: AddressBook):
