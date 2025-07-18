@@ -17,10 +17,18 @@ def main():
 
     while True:
         user_input = input("\nEnter a command: ")
+        
+        # Check for natural language patterns first
+        suggestion = analyze_user_intent(user_input)
+        if suggestion:
+            print(suggestion)
+            continue
+            
         command, args = parse_input(user_input)
 
-        # Check for intelligent command suggestions
-        if command not in ["close", "exit", "help", "hello"] and not any(cmd in command for cmd in ["add", "edit", "search", "show", "delete", "note", "phone", "birthday", "change"]):
+        # Check for intelligent command suggestions for unrecognized commands
+        valid_commands = ["close", "exit", "help", "hello", "add", "add-contact", "edit-contact", "search-contact", "change", "phone", "all", "add-birthday", "show-birthday", "birthdays", "delete", "note-add", "notes-all", "notes", "notes-tags", "note-update", "note-delete", "backups"]
+        if command not in valid_commands:
             suggestion = analyze_user_intent(user_input)
             if suggestion:
                 print(suggestion)
