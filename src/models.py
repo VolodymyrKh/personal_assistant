@@ -260,7 +260,7 @@ class AddressBook(UserDict):
     def search_contacts(self, field_name: str, query: str):
         result = []
 
-        valid_fields = ['name', 'phones', 'email', 'birthday', 'address']
+        valid_fields = ['name', 'phone', 'email', 'birthday', 'address']
         if field_name not in valid_fields:
             raise CustomValueError(f"Field '{field_name}' is not valid. Choose one of: {', '.join(valid_fields)}.")
 
