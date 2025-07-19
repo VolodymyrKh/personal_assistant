@@ -180,7 +180,13 @@ def parse_named_args(args: list[str]) -> dict:
 
 @input_error
 def add_contact(args, book: AddressBook):
-    name, phone, *_ = args
+    if len(args) < 2:
+        raise CustomValueError("Please provide name and phone number")
+    
+    # Join all args except the last one as the name
+    name = " ".join(args[:-1])
+    phone = args[-1]
+    
     record = book.find(name)
     message = "Contact updated."
     if record is None:
@@ -235,7 +241,9 @@ def add_contact_complete(book: AddressBook):
 @input_error
 def edit_contact_complete(args, book: AddressBook):
     
-    name = args[0]
+    if not args:
+        raise CustomValueError("Please enter the argument for the command")
+    name = " ".join(args)
     record = book.find(name)
 
     if record:
@@ -287,7 +295,14 @@ def search_contact_by(book: AddressBook):
 
 @input_error
 def change_contact(args, book: AddressBook):
-    name, old_phone, new_phone, *_ = args
+    if len(args) < 3:
+        raise CustomValueError("Please provide name, old phone, and new phone")
+    
+    # Join all args except the last two as the name
+    name = " ".join(args[:-2])
+    old_phone = args[-2]
+    new_phone = args[-1]
+    
     record = book.find(name)
     if not record:
         raise CustomValueError(f"Contact {name} not found.")
@@ -297,7 +312,9 @@ def change_contact(args, book: AddressBook):
     
 @input_error    
 def show_phone(args: list, book: AddressBook):    
-    name = args[0]
+    if not args:
+        raise CustomValueError("Please enter the argument for the command")
+    name = " ".join(args)
     record = book.find(name)
     if record:
         return f"{name}'s phones: {', '.join(p.value for p in record.phones)}"
@@ -359,7 +376,13 @@ def show_all(book: AddressBook):
 
 @input_error
 def add_birthday(args, book: AddressBook):
-    name, date_str, *_ = args
+    if len(args) < 2:
+        raise CustomValueError("Please provide name and birthday date")
+    
+    # Join all args except the last one as the name
+    name = " ".join(args[:-1])
+    date_str = args[-1]
+    
     record = book.find(name)
     if not record:
         record = Record(name)
@@ -369,7 +392,9 @@ def add_birthday(args, book: AddressBook):
 
 @input_error
 def show_birthday(args, book: AddressBook):
-    name = args[0]
+    if not args:
+        raise CustomValueError("Please enter the argument for the command")
+    name = " ".join(args)
     record = book.find(name)
     if record and record.birthday:
         return f"{name}'s birthday is {record.birthday}"
@@ -403,8 +428,8 @@ def input_with_prefill(prompt, prefill=''):
 @input_error
 def delete_contact(args, book: AddressBook):
     if not args:
-        raise IndexError
-    name = args[0]
+        raise CustomValueError("Please enter the argument for the command")
+    name = " ".join(args)
     if not book.find(name):
         raise CustomValueError(f"Contact {name} not found.")
 
