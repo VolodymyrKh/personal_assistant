@@ -27,6 +27,11 @@ COMMAND_SUGGESTIONS = {
     'phone number': ['phone', 'add', 'change'],
     'birthday': ['add-birthday', 'show-birthday', 'birthdays'],
     'upcoming birthdays': ['birthdays'],
+    'show contact': ['show-contact'],
+    'contact info': ['show-contact'],
+    'contact details': ['show-contact'],
+    'view contact': ['show-contact'],
+    'display contact': ['show-contact'],
     
     # Note-related commands
     'add note': ['note-add'],
@@ -125,6 +130,7 @@ def commands_overview():
     out += line("change", "Changes a contact's phone number", 'change John 0660320528 0660320529')  + "\n"
     out += line("phone", "Shows phone(s) of a contact", 'phone John')  + "\n"
     out += line("all", "Shows all contacts")  + "\n"
+    out += line("show-contact", "Shows detailed info about a contact", 'show-contact John')  + "\n"
     out += line("add-birthday", "Adds birthday to a contact", 'add-birthday Andrii 25.07.2001')  + "\n"
     out += line("show-birthday", "Shows birthday of a contact", 'show-birthday John')  + "\n"
     out += line("birthdays", "Shows upcoming birthdays", 'birthdays') + "\n"
@@ -666,3 +672,51 @@ def delete_note(args, note_instance: Note):
 def show_backups():
     """Show available backups"""
     return list_backups()
+
+@input_error
+def show_contact(args: list, book: AddressBook):
+    """Show detailed information about a specific contact"""
+    if not args:
+        raise CustomValueError("Please enter the contact name")
+    
+    name = " ".join(args)
+    record = book.find(name)
+    
+    if not record:
+        raise CustomValueError(f"Contact {name} not found.")
+    
+    # Create a colorful contact card
+    output = f"\n{Fore.CYAN + Style.BRIGHT}CONTACT INFORMATION{Style.RESET_ALL}\n"
+    output += f"{Fore.YELLOW}{'='*50}{Style.RESET_ALL}\n\n"
+    
+    # Name
+    output += f"{Fore.GREEN}Name:{Style.RESET_ALL} {Fore.WHITE + Style.BRIGHT}{record.name.value}{Style.RESET_ALL}\n"
+    
+    # Phones
+    if record.phones:
+        phones_str = ", ".join(p.value for p in record.phones)
+        output += f"{Fore.GREEN}Phone(s):{Style.RESET_ALL} {phones_str}\n"
+    else:
+        output += f"{Fore.GREEN}Phone(s):{Style.RESET_ALL} {Fore.RED}No phone numbers{Style.RESET_ALL}\n"
+    
+    # Email
+    if record.email:
+        output += f"{Fore.GREEN}Email:{Style.RESET_ALL} {record.email.value}\n"
+    else:
+        output += f"{Fore.GREEN}Email:{Style.RESET_ALL} {Fore.RED}No email{Style.RESET_ALL}\n"
+    
+    # Birthday
+    if record.birthday:
+        output += f"{Fore.GREEN}Birthday:{Style.RESET_ALL} {record.birthday.value}\n"
+    else:
+        output += f"{Fore.GREEN}Birthday:{Style.RESET_ALL} {Fore.RED}No birthday{Style.RESET_ALL}\n"
+    
+    # Address
+    if record.address:
+        output += f"{Fore.GREEN}Address:{Style.RESET_ALL} {record.address.value}\n"
+    else:
+        output += f"{Fore.GREEN}Address:{Style.RESET_ALL} {Fore.RED}No address{Style.RESET_ALL}\n"
+    
+    output += f"\n{Fore.YELLOW}{'='*50}{Style.RESET_ALL}"
+    
+    return output
