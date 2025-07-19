@@ -259,25 +259,32 @@ class AddressBook(UserDict):
     
     def search_contacts(self, field_name: str, query: str):
         result = []
+        
+        if field_name.lower() == 'phone':
+            field_name = 'phones'
 
-        valid_fields = ['name', 'phone', 'email', 'birthday', 'address']
+        valid_fields = ['name', 'phones', 'email', 'birthday', 'address']
         if field_name not in valid_fields:
             raise CustomValueError(f"Field '{field_name}' is not valid. Choose one of: {', '.join(valid_fields)}.")
 
+        query_lower = query.lower()
+        if not query_lower.strip():
+            return []
+
         for record in self.data.values():
-                
             field = getattr(record, field_name, None)
             if not field:
                 continue
 
+            
             if isinstance(field, list):
                 for item in field:
-                    if query.lower() in str(item.value).lower():
+                    if query_lower in str(item.value).lower():
                         result.append(record)
                         break
 
             elif hasattr(field, 'value'):
-                if query.lower() in str(field.value).lower():
+                if query_lower in str(field.value).lower():
                     result.append(record)
         return result
     
