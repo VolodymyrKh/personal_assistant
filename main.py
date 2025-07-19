@@ -13,20 +13,14 @@ def main():
 
     print("Welcome to the Personal Assistant Bot!")
     print("Type 'help' to see all available commands.")
-    print("I can understand natural language - try typing 'add a contact' or 'show my notes'!")
+    print("I can understand natural language - try typing 'show my notes'!")
 
     while True:
         user_input = input("\nEnter a command: ")
         
-        # Check for natural language patterns first
-        suggestion = analyze_user_intent(user_input)
-        if suggestion:
-            print(suggestion)
-            continue
-            
         command, args = parse_input(user_input)
 
-        # Check for intelligent command suggestions for unrecognized commands
+        # Check for intelligent command suggestions only for unrecognized commands
         valid_commands = ["close", "exit", "help", "hello", "add", "add-contact", "edit-contact", "search-contact", "change", "phone", "all", "add-birthday", "show-birthday", "birthdays", "delete", "note-add", "notes-all", "notes", "notes-tags", "note-update", "note-delete", "backups"]
         if command not in valid_commands:
             suggestion = analyze_user_intent(user_input)
