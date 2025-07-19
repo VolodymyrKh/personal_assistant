@@ -1,4 +1,4 @@
-from src.models import CustomValueError, PhoneValidationError
+from src.models import CustomValueError, PhoneValidationError, EmailValidationError, BirthdayValidationError
 
 
 def input_error(fn):
@@ -12,8 +12,12 @@ def input_error(fn):
             return "Please enter the argument for the command"
         except KeyError:
             return "Contact is not in the list. Use 'add' command to create one."
-        except PhoneValidationError:
-            return "Phone nr is not valid, please use 10 digits to specify one."
+        except PhoneValidationError as e:
+            return f"Phone validation error: {str(e)}"
+        except EmailValidationError as e:
+            return f"Email validation error: {str(e)}"
+        except BirthdayValidationError as e:
+            return f"Birthday validation error: {str(e)}"
         except CustomValueError as e:
             return str(e).strip()
     return inner

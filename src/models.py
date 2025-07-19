@@ -1,5 +1,6 @@
 from collections import UserDict, defaultdict
 from datetime import datetime, timedelta
+import hashlib
 import re
 
 # Phone nr validation exception
@@ -7,6 +8,12 @@ class PhoneValidationError(Exception):
     pass
 
 class CustomValueError(Exception):
+    pass
+
+class EmailValidationError(Exception):
+    pass
+
+class BirthdayValidationError(Exception):
     pass
 
 # Base class
@@ -19,7 +26,26 @@ class Field:
     
 # Contact name class
 class Name(Field):
-		pass
+    def __init__(self, value):
+        value = self._validate(value)
+        super().__init__(value)
+    
+    def _validate(self, value):
+        if not value or not value.strip():
+            raise CustomValueError("Name cannot be empty.")
+        if len(value.strip()) < 2:
+            raise CustomValueError("Name must be at least 2 characters long.")
+        return value.strip()
+
+class Address(Field):
+    def __init__(self, value):
+        value = self._validate(value)
+        super().__init__(value)
+    
+    def _validate(self, value):
+        if not value or not value.strip():
+            raise CustomValueError("Address cannot be empty.")
+        return value.strip()
 
 # Note title class
 class Title(Field):
@@ -28,10 +54,11 @@ class Title(Field):
         super().__init__(value)
 
     def _validate(self, value):
+        MAX_TITLE_LENGTH = 40
         if not value.strip():
             raise ValueError("Title cannot be empty.")
-        if len(value) > 20:
-            raise ValueError("Title is too long (max 20 characters).")
+        if len(value) > MAX_TITLE_LENGTH:
+            raise ValueError(f"Title is too long (max {MAX_TITLE_LENGTH} characters).")
         return value
 
 # Contact birthday class
@@ -42,9 +69,16 @@ class Birthday(Field):
 
     def _validate(self, value):
         try:
-            return datetime.strptime(value, "%d.%m.%Y").date()
+            date_obj = datetime.strptime(value, "%d.%m.%Y").date()
+            # Check if birthday is not in the future
+            if date_obj > datetime.today().date():
+                raise BirthdayValidationError("Birthday cannot be in the future.")
+            # Check if birthday is not too far in the past (reasonable age limit)
+            if date_obj < datetime(1900, 1, 1).date():
+                raise BirthdayValidationError("Birthday seems unrealistic (before 1900).")
+            return date_obj
         except ValueError:
-            raise CustomValueError("Invalid date format. Please use DD.MM.YYYY")
+            raise BirthdayValidationError("Invalid date format. Please use DD.MM.YYYY")
         
     def __str__(self):
         return self.value.strftime("%d.%m.%Y")    
@@ -56,9 +90,51 @@ class Phone(Field):
         super().__init__(value)
 
     def _validate(self, value):
-        if not re.fullmatch(r"\d{10}", value):
-            raise PhoneValidationError          # Exception to handle in following implementation
+        # Remove all non-digit characters
+        digits_only = re.sub(r'\D', '', value)
+        
+        # Check for common international formats
+        if value.startswith('+'):
+            # International format with country code
+            if len(digits_only) < 10 or len(digits_only) > 15:
+                raise PhoneValidationError("International phone number must be 10-15 digits (including country code).")
+        elif value.startswith('00'):
+            # International format starting with 00
+            if len(digits_only) < 10 or len(digits_only) > 15:
+                raise PhoneValidationError("International phone number must be 10-15 digits (including country code).")
+        else:
+            # Local format - must be exactly 10 digits
+            if len(digits_only) != 10:
+                raise PhoneValidationError("Local phone number must be exactly 10 digits.")
+        
+        # Store the cleaned version
+        self.value = digits_only
+        
+# Email class
+class Email(Field):
+    email_regexp = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
 
+    def __init__(self, value):
+        self._validate(value)
+        super().__init__(value)
+
+    def _validate(self, value):
+        if not value or not value.strip():
+            raise EmailValidationError("Email cannot be empty.")
+        
+        value = value.strip().lower()
+        
+        if not re.match(Email.email_regexp, value):
+            raise EmailValidationError(f"Invalid email address format: {value}")
+        
+        # Additional checks
+        if len(value) > 254:  # RFC 5321 limit
+            raise EmailValidationError("Email address is too long.")
+        
+        if value.count('@') != 1:
+            raise EmailValidationError("Email must contain exactly one @ symbol.")
+        
+        return value
 
 # One contact record: name, phone nr list.
 class Record:
@@ -66,6 +142,11 @@ class Record:
         self.name = Name(name)
         self.phones = []
         self.birthday = None
+        self.email = None
+        self.address = None
+
+    def edit_name(self, new_name):
+        self.name = Name(new_name)    
 
     def add_birthday(self, date_str):
         self.birthday = Birthday(date_str)
@@ -76,6 +157,12 @@ class Record:
             raise CustomValueError(f"Phone number {phone} already exists for the contact.")
         phone_to_add = Phone(phone)   # Validate + add
         self.phones.append(phone_to_add)
+
+    def add_email(self, email):
+        self.email = Email(email)
+    
+    def add_address(self, address):
+        self.address = Address(address)
 
     # Remove phone by value
     def remove_phone(self, phone):
@@ -98,21 +185,38 @@ class Record:
 
     def __str__(self):
         phones_str = "; ".join(p.value for p in self.phones)
-        return f"Contact name: {self.name.value}, {"phones" if len(self.phones) > 1 else "phone" }: {phones_str}"
+        return f"Name: {self.name.value} | {'phones' if len(self.phones) > 1 else 'phone'}: {phones_str} | email: {self.email.value if self.email else ''} | birthday: {self.birthday.value if self.birthday else ''} | address: {self.address.value if self.address else ''}"
     
 class NoteRecord:
-    def __init__(self, title, note_text=""):
+    def __init__(self, title, note_text="", tags=None):
         self.title = Title(title)
         self.note_text = note_text
+        self.tags = set(tags) if tags else set()
+        self.id_hash = hashlib.sha1(title.encode()).hexdigest()[:6]
+
+    def add_tag(self, tag):
+        """Add a tag to the note"""
+        if tag and tag.strip():
+            self.tags.add(tag.strip().lower())
+    
+    def remove_tag(self, tag):
+        """Remove a tag from the note"""
+        self.tags.discard(tag.strip().lower())
+    
+    def has_tag(self, tag):
+        """Check if note has a specific tag"""
+        return tag.strip().lower() in self.tags
 
     def validate_note_text(self, note_text):
+        MAX_TEXT_LENGTH = 150
         if not note_text.strip():
             return "Note text can not be empty"
-        if len(note_text) > 100:
-            return "Note text is too long (max. is 100 characters)"
+        if len(note_text) > MAX_TEXT_LENGTH:
+            return f"Note text is too long (max. is {MAX_TEXT_LENGTH} characters)"
 
     def __str__(self):
-        return f"Note title: {self.title.value}, note: {self.note_text}"
+        tags_str = f" [Tags: {', '.join(sorted(self.tags))}]" if self.tags else ""
+        return f"{self.id_hash} {self.title.value} {self.note_text}{tags_str}"
 
 
 # AddressBook (Map for Records)
@@ -131,31 +235,58 @@ class AddressBook(UserDict):
         if name in self.data:
             del self.data[name]
 
+    def update_record_name(self, old_name, new_name):
+        record = self.find(old_name)
+        if record:
+            record.edit_name(new_name)
+            self.data[new_name] = record
+            del self.data[old_name]        
+
     # Get next week birthday records
-    def get_upcoming_birthdays(self):
-        today = datetime.today().date()
-        '''
-        Згідно з ТЗ вибираємо всіх користувачів, День народження яких припадає на наст. тиждень (з наступного понеділка до наступної неділі)
-        Якщо потрібна вибірка на наст. 7 днів, то потрібно внести зміни в операндах (рядок 122) 
-        '''
-
-        # Next Monday 
-        days_till_monday = (7 - today.weekday()) % 7 or 7
-        next_monday = today + timedelta(days=days_till_monday)
-        next_sunday = next_monday + timedelta(days=6)
-
-        upcoming_birthdays = defaultdict(list)
+    def get_upcoming_birthdays(self, days=7):
+        start_range = datetime.today().date()
+        end_range = start_range + timedelta(days=days)
+        upcoming_birthdays = defaultdict()
 
         for contact in self.data.values():
             if contact.birthday:
-                birthday_this_year = contact.birthday.value.replace(year=today.year)
+                birthday_this_year = contact.birthday.value.replace(year=start_range.year)
 
-                #  Check if contact birthday falls within next week (Monday–Sunday)
-                if next_monday <= birthday_this_year <= next_sunday:
-                    weekday = birthday_this_year.strftime("%A")
-                    upcoming_birthdays[weekday].append(contact.name.value)
-
+                #  Check if contact birthday falls within selected range
+                if start_range <= birthday_this_year <= end_range:
+                    upcoming_birthdays[contact.name.value] = contact
         return dict(upcoming_birthdays)
+    
+    def search_contacts(self, field_name: str, query: str):
+        result = []
+        
+        if field_name.lower() == 'phone':
+            field_name = 'phones'
+
+        valid_fields = ['name', 'phones', 'email', 'birthday', 'address']
+        if field_name not in valid_fields:
+            raise CustomValueError(f"Field '{field_name}' is not valid. Choose one of: {', '.join(valid_fields)}.")
+
+        query_lower = query.lower()
+        if not query_lower.strip():
+            return []
+
+        for record in self.data.values():
+            field = getattr(record, field_name, None)
+            if not field:
+                continue
+
+            
+            if isinstance(field, list):
+                for item in field:
+                    if query_lower in str(item.value).lower():
+                        result.append(record)
+                        break
+
+            elif hasattr(field, 'value'):
+                if query_lower in str(field.value).lower():
+                    result.append(record)
+        return result
     
 # Notes entity class    
 class Note(UserDict):
@@ -166,3 +297,42 @@ class Note(UserDict):
     # Find Record by title
     def find(self, title):
         return self.data.get(title)
+
+    # Find Record by ID hash
+    def find_by_id(self, id_hash):
+        for record in self.data.values():
+            if record.id_hash == id_hash:
+                return record
+        return None
+
+    # Search notes by tag
+    def search_by_tag(self, tag):
+        tag = tag.strip().lower()
+        result = []
+        for record in self.data.values():
+            if record.has_tag(tag):
+                result.append(record)
+        return result
+
+    # Get all unique tags
+    def get_all_tags(self):
+        all_tags = set()
+        for record in self.data.values():
+            all_tags.update(record.tags)
+        return sorted(all_tags)
+
+    # Get notes sorted by tags
+    def get_notes_by_tags(self, tags=None):
+        if not tags:
+            return list(self.data.values())
+        
+        result = []
+        for record in self.data.values():
+            if any(tag.strip().lower() in record.tags for tag in tags):
+                result.append(record)
+        return result
+
+    # Delete Record by title
+    def delete(self, title):
+        if title in self.data:
+            del self.data[title]
