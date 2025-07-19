@@ -2,7 +2,7 @@ from src.models import AddressBook
 from src.store import load_address_book, load_notes_data, save_data, save_notes_data
 from src.processing import (
     add_birthday, add_contact_complete, birthdays, change_contact, edit_contact_complete, parse_input, parse_named_args,
-    add_contact, search_contact_by, show_all, show_birthday, show_phone,
+    add_contact, search_contact_by, show_all, show_birthday, show_phone, show_contact,
     add_note, show_all_notes, delete_note, update_note, commands_overview, delete_contact,
     show_notes_by_tags, analyze_user_intent, show_backups
 )
@@ -21,7 +21,7 @@ def main():
         command, args = parse_input(user_input)
 
         # Check for intelligent command suggestions only for unrecognized commands
-        valid_commands = ["close", "exit", "help", "hello", "add", "add-contact", "edit-contact", "search-contact", "change", "phone", "all", "add-birthday", "show-birthday", "birthdays", "delete", "note-add", "notes-all", "notes", "notes-tags", "note-update", "note-delete", "backups"]
+        valid_commands = ["close", "exit", "help", "hello", "add", "add-contact", "edit-contact", "search-contact", "change", "phone", "all", "add-birthday", "show-birthday", "birthdays", "delete", "show-contact", "note-add", "notes-all", "notes", "notes-tags", "note-update", "note-delete", "backups"]
         if command not in valid_commands:
             suggestion = analyze_user_intent(user_input)
             if suggestion:
@@ -54,6 +54,8 @@ def main():
                 print(show_phone(args, book))
             case "all":
                 print(show_all(book))
+            case "show-contact":
+                print(show_contact(args, book))
             case "add-birthday":
                 print(add_birthday(args, book))
             case "show-birthday":
