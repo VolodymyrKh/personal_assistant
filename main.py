@@ -1,4 +1,3 @@
-from src.models import AddressBook
 from src.store import load_address_book, load_notes_data, save_data, save_notes_data
 from src.processing import (
     add_birthday, add_contact_complete, birthdays, change_contact, edit_contact_complete, parse_input, parse_named_args,
