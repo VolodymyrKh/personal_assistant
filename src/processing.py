@@ -205,7 +205,7 @@ def add_contact(args, book: AddressBook):
 
 @input_error
 def add_contact_complete(book: AddressBook):
-    name_msg = "Please enter name (required): "
+    name_msg = f"\n{Fore.GREEN + Style.BRIGHT}Please enter name (required): {Style.RESET_ALL}"
     name_input = input(name_msg.rjust(len(name_msg) + 4)).strip()
 
     if not name_input:
@@ -218,31 +218,31 @@ def add_contact_complete(book: AddressBook):
     record = Record(name_input)
     book.add_record(record)
     
-    phone_msg = "Please enter phone (optional), or press 'Enter' to skip: "
+    phone_msg = f"\n{Fore.GREEN + Style.BRIGHT}Please enter phone (optional), or press 'Enter' to skip: {Style.RESET_ALL}"
     phone_input = input(phone_msg.rjust(len(phone_msg) + 4)).strip()
 
     if phone_input:
         record.add_phone(phone_input)
 
-    email_msg = "Please enter email (optional), or press 'Enter' to skip: "
+    email_msg = f"\n{Fore.GREEN + Style.BRIGHT}Please enter email (optional), or press 'Enter' to skip: {Style.RESET_ALL}"
     email_input = input(email_msg.rjust(len(email_msg) + 4)).strip()
 
     if email_input:
         record.add_email(email_input)
 
-    birthday_msg = "Please enter birthday (optional), or press 'Enter' to skip: "
+    birthday_msg = f"\n{Fore.GREEN + Style.BRIGHT}Please enter birthday (optional), or press 'Enter' to skip: {Style.RESET_ALL}"
     birthday_input = input(birthday_msg.rjust(len(birthday_msg) + 4)).strip()
 
     if birthday_input:
         record.add_birthday(birthday_input)
 
-    address_msg = "Please enter address (optional), or press 'Enter' to skip: "
+    address_msg = f"\n{Fore.GREEN + Style.BRIGHT}Please enter address (optional), or press 'Enter' to skip: {Style.RESET_ALL}"
     address_input = input(address_msg.rjust(len(address_msg) + 4)).strip()
 
     if address_input:
         record.add_address(address_input)
         
-    return "Contact added."
+    return f"\n{Fore.CYAN + Style.BRIGHT}Contact added.{Style.RESET_ALL}"
 
 @input_error
 def edit_contact_complete(args, book: AddressBook):
@@ -253,12 +253,12 @@ def edit_contact_complete(args, book: AddressBook):
     record = book.find(name)
 
     if record:
-        new_name_msg = "Please specify new name, use 'quotes' if name separated by space, or press 'Enter' to skip: "
+        new_name_msg = f"\n{Fore.GREEN + Style.BRIGHT}Please specify new name, use 'quotes' if name separated by space, or press 'Enter' to skip: {Style.RESET_ALL}"
         new_name_input = input(new_name_msg.rjust(len(new_name_msg) + 4)).strip()
         if new_name_input:
             book.update_record_name(name, new_name_input)
 
-        new_phone_msg = "Please enter one phone to add <new_phone> or two phones to replace <old_phone> <new_phone>, or press 'Enter' to skip: "
+        new_phone_msg = f"\n{Fore.GREEN + Style.BRIGHT}Please enter one phone to add <new_phone> or two phones to replace <old_phone> <new_phone>, or press 'Enter' to skip: {Style.RESET_ALL}"
         new_phone_input = input(new_phone_msg.rjust(len(new_phone_msg) + 4)).strip()
         if new_phone_input:
             phones = shlex.split(new_phone_input)
@@ -268,35 +268,35 @@ def edit_contact_complete(args, book: AddressBook):
                 old_phone, new_phone, *_ = phones
                 record.edit_phone(old_phone, new_phone)
 
-        new_email_msg = "Please enter email, or press 'Enter' to skip: "
+        new_email_msg = f"\n{Fore.GREEN + Style.BRIGHT}Please enter email, or press 'Enter' to skip: {Style.RESET_ALL}"
         new_email_input = input(new_email_msg.rjust(len(new_email_msg) + 4)).strip()
         if new_email_input:
             record.add_email(new_email_input)
 
-        new_birthday_msg = "Please enter birthday, or press 'Enter' to skip: "
+        new_birthday_msg = f"\n{Fore.GREEN + Style.BRIGHT}Please enter birthday, or press 'Enter' to skip: {Style.RESET_ALL}"
         new_birthday_input = input(new_birthday_msg.rjust(len(new_birthday_msg) + 4)).strip()
         if new_birthday_input:
             record.add_birthday(new_birthday_input)
 
-        new_address_msg = "Please enter address, or press 'Enter' to skip: "
+        new_address_msg = f"\n{Fore.GREEN + Style.BRIGHT}Please enter address, or press 'Enter' to skip: {Style.RESET_ALL}"
         new_address_input = input(new_address_msg.rjust(len(new_address_msg) + 4)).strip()
         if new_address_input:
             record.add_address(new_address_input)        
-        return "Contact updated."
+        return f"\n{Fore.CYAN + Style.BRIGHT}Contact updated.{Style.RESET_ALL}"
     
     raise CustomValueError(f"Contact {name} not found.")
 
 @input_error
 def search_contact_by(book: AddressBook):
-    search_msg = "Specify one search field 'name/email/phone' and the value to search for: "
+    search_msg = f"\n{Fore.GREEN + Style.BRIGHT}Specify one search field 'name/email/phones' and the value to search for: {Style.RESET_ALL}"
     search_input = shlex.split(input(search_msg.rjust(len(search_msg) + 4)).strip())
 
     search_field, search_value, *_ = search_input
     filtered_records = book.search_contacts(search_field, search_value)
 
     if not filtered_records:
-        return "No matches found."
-    return "\n".join(str(record) for record in filtered_records)
+        return f"\n{Fore.CYAN + Style.BRIGHT}No matches found.{Style.RESET_ALL}"
+    return show_all(filtered_records)
     
 
 @input_error
@@ -414,11 +414,13 @@ def birthdays(book: AddressBook):
     birthday_input = int(input(birthday_msg.rjust(len(birthday_msg) + 4)).strip())
 
     upcoming_birthdays = book.get_upcoming_birthdays(birthday_input)
+
     if not upcoming_birthdays:
-        return "No birthdays fall next week."
-    result = ["Upcoming birthdays fall next week:"]
+        return f"\n{Fore.CYAN + Style.BRIGHT}No birthdays fall next {birthday_input} days.{Style.RESET_ALL}"
+    
+    result = [f"\n{Fore.CYAN + Style.BRIGHT}Upcoming birthdays fall next {birthday_input} days:{Style.RESET_ALL}\n"]
     for name, contact in sorted(upcoming_birthdays.items()):
-        result.append(f"{name}: {contact.birthday.value}")
+        result.append(f"{Fore.GREEN + Style.BRIGHT}{name}: {contact.birthday.value}{Style.RESET_ALL}")
     return "\n".join(result)
 
 def input_with_prefill(prompt, prefill=''):
